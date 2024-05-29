@@ -7,7 +7,7 @@
             <img
               src="../assets/graphics/images/logo.png"
               alt="logo"
-              class="w-[80%]"
+              class="w-[75%]"
             />
           </a>
         </div>
@@ -67,7 +67,7 @@
   </header>
 </template>
 <script setup>
-import { onMounted, onUnmounted, ref } from "vue";
+import { ref } from "vue";
 const open = ref(false);
 const dropdownButtonRef = (ref < HTMLButtonElement) | (null > null);
 
@@ -83,20 +83,20 @@ const navLinkItems = ref([
 ]);
 
 // Custom composition function to handle click outside
-const handleClickOutside = (event) => {
-  if (
-    dropdownButtonRef.value &&
-    !dropdownButtonRef.value.contains(event.target)
-  ) {
-    open.value = false;
-  }
-};
+// const handleClickOutside = (event) => {
+//   if (
+//     dropdownButtonRef.value &&
+//     !dropdownButtonRef.value.contains(event.target)
+//   ) {
+//     open.value = false;
+//   }
+// };
 
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
+// onMounted(() => {
+//   document.addEventListener("click", handleClickOutside);
+// });
 
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+// onUnmounted(() => {
+//   document.removeEventListener("click", handleClickOutside);
+// });
 </script>

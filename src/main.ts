@@ -5,8 +5,8 @@ import { createPinia } from "pinia";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import "./index.css";
 
-createApp(App)
-  .use(router)
-  .component("font-awesome-icon", FontAwesomeIcon)
-  .use(createPinia())
-  .mount("#app");
+const app = createApp(App);
+app.use(router);
+app.component("font-awesome-icon", FontAwesomeIcon);
+app.use(createPinia());
+app.mount("#app");

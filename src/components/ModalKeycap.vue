@@ -5,25 +5,29 @@
   >
     <div
       ref="modalContainer"
-      class="bg-main w-full max-w-3xl p-8 rounded-lg shadow-md"
+      class="bg-main w-full max-w-5xl p-8 rounded-lg shadow-md"
     >
-      <div class="max-h-[70vh] overflow-x-hidden overflow-y-auto px-2">
+      <div class="max-h-[75vh] overflow-x-hidden overflow-y-auto px-2">
         <form class="mt-4">
           <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-white"
+            <label for="name" class="flex text-sm font-medium text-white ms-2"
               >Name</label
             >
             <input
+              v-model="formData.name"
               type="text"
               class="mt-1 p-2 w-full border rounded-md"
               id="name"
             />
           </div>
           <div class="mb-4">
-            <label for="fileUrl" class="block text-sm font-medium text-white"
+            <label
+              for="fileUrl"
+              class="flex text-sm font-medium text-white ms-2"
               >Image Link</label
             >
             <input
+              v-model="formData.link"
               type="text"
               class="mt-1 p-2 w-full border rounded-md"
               id="fileUrl"
@@ -32,45 +36,49 @@
             />
           </div>
           <div class="mb-4">
-            <label for="fileInput" class="block text-sm font-medium text-white"
+            <label
+              for="fileInput"
+              class="flex text-sm font-medium text-white ms-2"
               >Upload Image</label
             >
             <input
+              class="mt-1 p-2 w-full border rounded-md text-white"
               type="file"
-              ref="file"
+              ref="fileInput"
               id="fileInput"
               @change="loadImage($event)"
               accept="image/*"
             />
           </div>
-          <div class="mb-4">
-            <div class="cropArea">
-              <cropper
-                :src="image.src"
-                ref="cropper"
-                :debounce="false"
-                :stencil-props="{
-                  aspectRatio: 1,
-                }"
-                @change="handleCropImage"
-              />
-            </div>
+        </form>
+        <div class="mb-4 flex">
+          <div class="cropArea w-[70%]">
+            <cropper
+              :src="image.src"
+              ref="cropperRef"
+              :debounce="false"
+              :stencil-props="{
+                aspectRatio: 1,
+              }"
+              @change="handleCropImage"
+            />
           </div>
-          <div class="mb-4">
+          <div class="flex w-[30%] justify-center items-center bg-[#e4e4e4]">
             <preview
               :width="240"
               :height="240"
               :image="result.image"
-              :coordinates="result.coordinates"
+              :coordinates="result?.coordinates"
             />
           </div>
-        </form>
+        </div>
       </div>
       <div class="flex justify-end mt-6">
         <button
           class="text-white bg-[#3266e3] hover:bg-[#2557D6]/90 focus:ring-4 focus:ring-[#2557D6]/50 focus:outline-none font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-[#2557D6]/50 me-2"
+          @click="handleSave"
         >
-          Create
+          {{ editingKeycap.id ? "Save" : "Create" }}
         </button>
         <button
           @click="setModalOpen(false)"
@@ -83,12 +91,15 @@
   </div>
 </template>
 <script setup>
-import { showModalKeycap } from "@/services/sections";
+import { editingKeycap, showModalKeycap } from "@/services/sections";
 import { Cropper, Preview } from "vue-advanced-cropper";
-import { reactive, ref } from "vue";
+import { ref, defineEmits, reactive, watch } from "vue";
 import "vue-advanced-cropper/dist/style.css";
-
-let result = reactive({
+import { generateID } from "@/helpers/utils";
+const emits = defineEmits(["save"]);
+const cropperRef = ref(null);
+const fileInput = ref(null);
+const result = ref({
   coordinates: null,
   image: null,
 });
@@ -98,6 +109,34 @@ const image = ref({
   type: null,
 });
 
+let formData = reactive({
+  name: "",
+  url: "",
+  link: "",
+});
+
+watch(
+  () => editingKeycap.value,
+  (value) => {
+    if (value.id) {
+      formData = value;
+    }
+  }
+);
+
+const reset = () => {
+  formData = {
+    id: "",
+    name: "",
+    url: "",
+    link: "",
+  };
+  image.value.src = "";
+  image.value.type = "";
+  fileInput.value.value = "";
+  result.value.coordinates = {};
+  result.value.image = {};
+};
 const setModalOpen = (value) => {
   showModalKeycap.value = value;
 };
@@ -123,55 +162,57 @@ const getMimeType = (file, fallback = null) => {
       return fallback;
   }
 };
+
 const loadImage = (event) => {
-  // Reference to the DOM input element
   const { files } = event.target;
-  // Ensure that you have a file before attempting to read it
+
   if (files && files[0]) {
-    // 1. Revoke the object URL, to allow the garbage collector to destroy the uploaded before file
     if (image.value.src) {
       URL.revokeObjectURL(image.value.src);
     }
-    // 2. Create the blob link to the file to optimize performance:
-    const blob = URL.createObjectURL(files[0]);
 
-    // 3. The steps below are designated to determine a file mime type to use it during the
-    // getting of a cropped image from the canvas. You can replace it them by the following string,
-    // but the type will be derived from the extension and it can lead to an incorrect result:
-    //
-    // this.image = {
-    //    src: blob;
-    //    type: files[0].type
-    // }
-
-    // Create a new FileReader to read this image binary data
     const reader = new FileReader();
-    // Define a callback function to run, when FileReader finishes its job
-    reader.onload = (e) => {
-      // Note: arrow function used here, so that "this.image" refers to the image of Vue component
 
-      image.value.src = blob;
-      image.value.type = getMimeType(e.target.result, files[0].type);
+    reader.onload = (e) => {
+      const arrayBuffer = e.target.result;
+      const mimeType = getMimeType(arrayBuffer, files[0].type);
+
+      // Convert the ArrayBuffer to base64 string
+      const base64String = arrayBufferToBase64(arrayBuffer);
+
+      // Set the image src to the base64 string
+      image.value.src = `data:${mimeType};base64,${base64String}`;
+      image.value.type = mimeType;
     };
-    // Start the reader job - read file as a data url (base64 format)
+
     reader.readAsArrayBuffer(files[0]);
   }
 };
+
+const arrayBufferToBase64 = (buffer) => {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+};
 const handleCropImage = ({ coordinates, image }) => {
-  result = { coordinates, image };
-  console.log(result);
+  result.value.coordinates = coordinates;
+  result.value.image = image;
 };
 
-// const handleClickOutside = (event: MouseEvent): void => {
-//   if (
-//     modalContainer.value &&
-//     trigger.value &&
-//     !modalContainer.value.contains(event.target as Node) &&
-//     event.target !== trigger.value
-//   ) {
-//     setModalOpen(false);
-//   }
-// };
+const handleSave = () => {
+  if (!editingKeycap.value) {
+    formData.id = generateID();
+  }
+  const { canvas } = cropperRef.value.getResult();
+  formData.url = canvas.toDataURL("image/jpeg", 0.8);
+  showModalKeycap.value = false;
+  emits("save", formData);
+  reset();
+};
 </script>
 
 <style lang="scss" scoped>
@@ -179,6 +220,6 @@ const handleCropImage = ({ coordinates, image }) => {
   background: #e4e4e4;
   overflow: hidden;
   width: 678px;
-  height: 360px;
+  height: auto;
 }
 </style>
