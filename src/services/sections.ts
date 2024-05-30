@@ -56,7 +56,9 @@ export const fetchData = async () => {
       id: FIREBASE_CONFIG.doc_id,
       ...doc.data(),
     }));
+    // @ts-ignore
     if (res[0].data) {
+      // @ts-ignore
       sections.value = res[0].data;
     } else {
       sections.value = [];
