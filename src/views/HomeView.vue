@@ -1,5 +1,5 @@
 <template>
-  <div class="home w-full">
+  <div class="home w-full px-[200px] py-5">
     <Home msg="Welcome to Your Vue.js + TypeScript App" />
   </div>
 </template>

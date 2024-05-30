@@ -1,6 +1,6 @@
 <template>
   <Header />
-  <div class="flex flex-col items-center px-[200px] py-5">
+  <div class="flex flex-col items-center overflow-auto">
     <!-- <Burger class="burger" /> -->
     <!-- <div class="my-2 font-bold">This burger menu icon is SVG component.</div> -->
     <Suspense>
@@ -11,6 +11,12 @@
 
 <script setup>
 import { Header } from "@/components";
+import { onBeforeMount } from "vue";
+import { fetchData } from "./services/sections";
+
+onBeforeMount(() => {
+  fetchData();
+});
 </script>
 
 <style lang="scss">

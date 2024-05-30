@@ -1,15 +1,15 @@
 <template>
   <div @keydown.esc="showModalKeycap = false">
-    <div class="p-4 flex flex-col justify-between min-h-[80vh] mx-auto">
+    <div class="p-4 flex flex-col justify-between h-[80vh] mx-auto">
       <!-- Render Sections -->
       <div v-for="(section, index) in sections" :key="index" class="mb-8">
         <div class="flex items-center justify-between mb-4">
           <h1
             v-if="!section.editingTitle"
             @click="toggleEdit(index)"
-            class="flex cursor-pointer text-2xl font-semibold text-white h-[42px] border-b-2 border-sky-500 w-96"
+            class="flex font-semi-bold cursor-pointer items-center justify-start me-6 w-96 truncate text-2xl min-h-[42px] border-b-2 border-fuchsia-300 bg-gradient-to-r from-sky-600 via-violet-500 to-sky-400 text-transparent bg-clip-text"
           >
-            {{ section.title }}
+            {{ section.title.length ? section.title : "Section name here..." }}
           </h1>
           <input
             v-else
@@ -29,26 +29,70 @@
           </button>
         </div>
         <div
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4"
+          class="grid grid-cols-3 lg:grid-cols-7 md:grid-cols-5 gap-4 py-4 max-w-fit"
         >
           <div
             v-for="image in section.images"
             :key="image.id"
-            class="h-28 w-28 bg-gray-200 flex items-center justify-center overflow-hidden rounded-lg shadow-md"
+            class="col-md-3 mb-3 max-w-fit"
           >
-            <img
-              @click="handleEdit(image)"
-              :src="image.url"
-              alt="Image"
-              class="max-h-full max-w-full"
-            />
+            <div class="h-full flex flex-col max-w-fit">
+              <div class="relative max-w-fit">
+                <button
+                  class="absolute top-2 right-2 inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium text-gray-900 rounded-md group bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-purple-500 group-hover:to-pink-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-purple-200 dark:focus:ring-purple-800"
+                  @click="handleRemoveImage(section.id, image.id)"
+                >
+                  <span
+                    class="p-1 transition-all ease-in duration-75 bg-white dark:bg-gray-600 rounded-md group-hover:bg-opacity-0"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                      stroke="currentColor"
+                      class="w-4 h-4"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M6 18 18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </span>
+                </button>
+                <img
+                  @click="handleEdit(image)"
+                  :src="image.url"
+                  alt="Image"
+                  class="h-auto max-w-full rounded-lg cursor-pointer"
+                />
+              </div>
+              <div>
+                <h5 class="text-center text-xl text-purple-50">
+                  {{ image.name }}
+                </h5>
+              </div>
+            </div>
           </div>
         </div>
-        <textarea
-          v-if="index === 2"
-          class="w-full h-40 p-2 border rounded-lg"
-          placeholder="Enter text here..."
-        ></textarea>
+        <div v-if="section.id === 3" class="w-full">
+          <div class="w-[45%]">
+            <label
+              for="floatingTextarea"
+              class="flex mb-2 text-lg font-medium text-gray-900 dark:text-white"
+              >Your note</label
+            >
+            <textarea
+              id="floatingTextarea"
+              rows="4"
+              class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="Write your note here..."
+              v-model="section.note"
+            >
+            </textarea>
+          </div>
+        </div>
       </div>
       <!-- <button @click="updateDocument">Upload Data</button> -->
     </div>
@@ -69,6 +113,15 @@ import {
 } from "firebase/firestore";
 import { ModalKeycap } from "@/components";
 import { sections, showModalKeycap, editingKeycap } from "@/services/sections";
+import { useLoading } from "vue-loading-overlay";
+
+const $loading = useLoading({
+  isFullPage: true,
+  loader: "dots",
+  backgroundColor: "#848c8b",
+  opacity: 0.3,
+});
+
 const addingSection = ref(null);
 const toggleEdit = async (index, type) => {
   const section = sections.value[index];
@@ -92,36 +145,27 @@ const handleEdit = (keycap) => {
   showModalKeycap.value = true;
   editingKeycap.value = keycap;
 };
+
+const handleRemoveImage = (sectionId, imageId) => {
+  const section = sections.value.find((item) => item.id === sectionId);
+  const newImagesArr = section.images.filter((img) => img.id !== imageId);
+  if (section && newImagesArr) {
+    section.images = newImagesArr;
+  }
+  const uploadData = sections.value;
+  // console.log(sections.value);
+  updateDocument(uploadData);
+};
 // const data = ref([]);
 
-const fetchData = async () => {
-  try {
-    const querySnapshot = await getDocs(
-      collection(db, FIREBASE_CONFIG.collection)
-    );
-    const res = querySnapshot.docs.map((doc) => ({
-      id: FIREBASE_CONFIG.doc_id,
-      ...doc.data(),
-    }));
-    if (res[0].data) {
-      sections.value = res[0].data;
-    } else {
-      sections.value = [];
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-onBeforeMount(() => {
-  fetchData();
-});
 const updateDocument = async (uploadData) => {
   if (!FIREBASE_CONFIG.doc_id) {
     console.error("No document ID available to update.");
     return;
   }
-
+  const loader = $loading.show({
+    // Optional parameters
+  });
   try {
     const documentRef = doc(
       db,
@@ -133,7 +177,9 @@ const updateDocument = async (uploadData) => {
     });
     console.log("Document updated with ID: ", FIREBASE_CONFIG.doc_id);
     fetchData();
+    loader.hide();
   } catch (e) {
+    loader.hide();
     console.error("Error updating document: ", e);
   }
 };

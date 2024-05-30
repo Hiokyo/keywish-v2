@@ -11,9 +11,9 @@ export const route_index = {
     },
   },
   about: {
-    path: "/about",
-    name: "about",
-    component: () => import("@/views/AboutView.vue"),
+    path: "/preview",
+    name: "preview",
+    component: () => import("@/views/PreviewView.vue"),
     meta: {
       test: false,
     },

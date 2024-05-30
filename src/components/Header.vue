@@ -3,13 +3,13 @@
     <div class="container">
       <div class="relative -mx-4 flex items-center justify-between">
         <div class="w-60 max-w-full px-4">
-          <a href="/#" class="block w-full py-1">
+          <router-link to="/home" class="block w-full py-1">
             <img
               src="../assets/graphics/images/logo.png"
               alt="logo"
               class="w-[75%]"
             />
-          </a>
+          </router-link>
         </div>
         <div class="flex w-full items-center justify-between px-4">
           <div>
@@ -37,13 +37,12 @@
               <ul class="block lg:flex">
                 <template v-for="(item, index) in navLinkItems" :key="index">
                   <li>
-                    <a
-                      v-if="item.href"
-                      :href="item.href"
+                    <router-link
+                      :to="item.href"
                       class="flex py-2 text-base font-medium text-body-color hover:text-dark dark:text-dark-6 dark:hover:text-white lg:ml-12 lg:inline-flex"
                     >
                       {{ item.text }}
-                    </a>
+                    </router-link>
                   </li>
                 </template>
               </ul>
@@ -76,10 +75,8 @@ const toggleNavbar = () => {
 };
 
 const navLinkItems = ref([
-  { text: "Home", href: "javascript:void(0)" },
-  { text: "Payment", href: "javascript:void(0)" },
-  { text: "About", href: "javascript:void(0)" },
-  { text: "Blog", href: "javascript:void(0)" },
+  { text: "Home", href: "/" },
+  { text: "Preview", href: "/preview" },
 ]);
 
 // Custom composition function to handle click outside

@@ -1,4 +1,21 @@
 import { reactive, ref } from "vue";
+import { db, FIREBASE_CONFIG } from "@/helpers/firebase";
+import {
+  collection,
+  addDoc,
+  doc,
+  setDoc,
+  updateDoc,
+  getDocs,
+} from "firebase/firestore";
+import { useLoading } from "vue-loading-overlay";
+
+const $loading = useLoading({
+  isFullPage: true,
+  loader: "dots",
+  backgroundColor: "#848c8b",
+  opacity: 0.3,
+});
 
 export const showModalKeycap = ref(false);
 export const editingKeycap = ref({});
@@ -26,3 +43,27 @@ export const sections = ref([
     note: "",
   },
 ]);
+
+export const fetchData = async () => {
+  const loader = $loading.show({
+    // Optional parameters
+  });
+  try {
+    const querySnapshot = await getDocs(
+      collection(db, FIREBASE_CONFIG.collection)
+    );
+    const res = querySnapshot.docs.map((doc) => ({
+      id: FIREBASE_CONFIG.doc_id,
+      ...doc.data(),
+    }));
+    if (res[0].data) {
+      sections.value = res[0].data;
+    } else {
+      sections.value = [];
+    }
+  } catch (error) {
+    console.log(error);
+  } finally {
+    loader.hide();
+  }
+};

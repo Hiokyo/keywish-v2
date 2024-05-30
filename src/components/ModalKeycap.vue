@@ -32,6 +32,7 @@
               class="mt-1 p-2 w-full border rounded-md"
               id="fileUrl"
               ref="file"
+              @input="validateImageUrl"
               aria-describedby="fileUrlHelp"
             />
           </div>
@@ -139,6 +140,10 @@ const reset = () => {
 };
 const setModalOpen = (value) => {
   showModalKeycap.value = value;
+};
+
+const validateImageUrl = () => {
+  image.value.src = formData.link;
 };
 
 const getMimeType = (file, fallback = null) => {
